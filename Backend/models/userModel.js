@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema({
     required: true,
     select: false 
   },
-  trustScore: { type: Number, default: 5 }, 
+  trustScore: { type: Number, default: null }, 
 }, { timestamps: true });
 
 

@@ -1,6 +1,6 @@
 import Booking from '../models/bookingModel.js';
 import Tool from '../models/toolModel.js';
-import {io,activeUsers} from '../index.js';
+import { io, activeUsers } from '../index.js';
 
 
 export const createBookingRequest = async (req, res, next) => {
@@ -14,7 +14,6 @@ export const createBookingRequest = async (req, res, next) => {
       throw new Error('Tool not found');
     }
 
-    
     if (tool.owner.toString() === borrowerId.toString()) {
       res.status(400);
       throw new Error('You cannot book your own tool');
@@ -28,36 +27,32 @@ export const createBookingRequest = async (req, res, next) => {
       endDate,
     });
 
-    
-     const ownerSocketId = activeUsers[tool.owner.toString()];
-    if (ownerSocketId) {
-
-  console.log(`--- SERVER: Emitting 'new_booking_request' to owner ${tool.owner} ---`);
-  
-      io.to(ownerSocketId).emit('new_booking_request', {
+    // --- THIS IS THE FIX ---
+    // Get the owner's full info object from activeUsers
+    const ownerInfo = activeUsers[tool.owner.toString()];
+    if (ownerInfo) {
+      // Use the .socketId property to send the notification
+      io.to(ownerInfo.socketId).emit('new_booking_request', {
         message: `You have a new booking request for your tool: ${tool.name}`,
         bookingDetails: booking,
       });
-      console.log(`Notification sent to owner ${tool.owner} at socket ${ownerSocketId}`);
+      console.log(`Notification sent to owner ${tool.owner}`);
     } else {
       console.log(`Owner ${tool.owner} is not online.`);
     }
-    
+    // --- END OF FIX ---
 
     res.status(201).json(booking);
   } catch (error) {
     next(error); 
-    
   }
 };
 
 export const getUserBookings = async (req, res, next) => {
   try {
     const bookings = await Booking.find({
-      
       $or: [{ borrower: req.user._id }, { owner: req.user._id }],
     })
-    
     .populate('tool', 'name imageUrl')
     .populate('borrower', 'name')
     .populate('owner', 'name')
@@ -68,6 +63,7 @@ export const getUserBookings = async (req, res, next) => {
     next(error);
   }
 };
+
 export const updateBookingStatus = async (req, res, next) => {
   const { status } = req.body; 
 
@@ -87,6 +83,7 @@ export const updateBookingStatus = async (req, res, next) => {
     booking.status = status;
     await booking.save();
     
+    // Your excellent logic to make the tool unavailable
     if (status === 'approved') {
         const tool = await Tool.findById(booking.tool._id);
         if (tool) {
@@ -95,9 +92,12 @@ export const updateBookingStatus = async (req, res, next) => {
         }
     }
 
-    const borrowerSocketId = activeUsers[booking.borrower.toString()];
-    if (borrowerSocketId) {
-      io.to(borrowerSocketId).emit('booking_status_updated', {
+    // --- THIS IS THE FIX ---
+    // Get the borrower's full info object
+    const borrowerInfo = activeUsers[booking.borrower.toString()];
+    if (borrowerInfo) {
+      // Use the .socketId property to send the notification
+      io.to(borrowerInfo.socketId).emit('booking_status_updated', {
         message: `Your request for "${booking.tool.name}" has been ${status}.`,
         bookingDetails: booking,
       });
@@ -105,6 +105,7 @@ export const updateBookingStatus = async (req, res, next) => {
     } else {
       console.log(`Borrower ${booking.borrower} is not online.`);
     }
+    // --- END OF FIX ---
 
     res.json(booking);
   } catch (error) {
