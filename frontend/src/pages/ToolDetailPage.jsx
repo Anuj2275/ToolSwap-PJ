@@ -1,5 +1,3 @@
-// PASTE THIS EXACT CODE INTO src/pages/ToolDetailPage.jsx
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
@@ -44,16 +42,14 @@ const ToolDetailPage = () => {
             b => b.tool._id === id && b.borrower._id === user._id
           );
           
-          // Check for any active requests (pending or approved)
           const activeRequest = userRequestsForThisTool.find(
             b => b.status === 'pending' || b.status === 'approved'
           );
 
           if (activeRequest) {
-            setRequestCount(3); // Max out the count to disable the button
+            setRequestCount(3);
             setBookingMessage(`You have an active request for this tool. Status: ${activeRequest.status}`);
           } else {
-            // If no active request, count the total number of requests made
             setRequestCount(userRequestsForThisTool.length);
             if (userRequestsForThisTool.length >= 3) {
               setBookingMessage('You have reached the maximum number of requests for this tool.');
