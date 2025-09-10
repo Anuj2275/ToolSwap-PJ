@@ -18,12 +18,6 @@ const ToolDetailPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setTool(null);
-    setLoading(true);
-    setError('');
-    setBookingMessage('');
-    setRequestCount(0);
-
     if (!id) {
       setLoading(false);
       setError("No tool ID provided.");
@@ -31,15 +25,18 @@ const ToolDetailPage = () => {
     }
 
     const fetchData = async () => {
+      setLoading(true);
       try {
         const { data: toolData } = await api.get(`/tools/${id}`);
         setTool(toolData);
         
+        // If a user is logged in, check their booking history for this tool
         if (user) {
           const { data: bookingsData } = await api.get('/bookings/my-bookings');
           
           const userRequestsForThisTool = bookingsData.filter(
-            b => b.tool._id === id && b.borrower._id === user._id
+            // Use optional chaining (?.) for safety
+            b => b.tool?._id === id && b.borrower?._id === user._id
           );
           
           const activeRequest = userRequestsForThisTool.find(
@@ -47,6 +44,7 @@ const ToolDetailPage = () => {
           );
 
           if (activeRequest) {
+            // If there's an active request, block new requests
             setRequestCount(3);
             setBookingMessage(`You have an active request for this tool. Status: ${activeRequest.status}`);
           } else {
@@ -78,8 +76,8 @@ const ToolDetailPage = () => {
     }
 
     if (new Date(startDate) >= new Date(endDate)) {
-        setError('End date must be after start date.');
-        return;
+      setError('End date must be after start date.');
+      return;
     }
 
     setError('');
@@ -99,10 +97,12 @@ const ToolDetailPage = () => {
   };
 
   if (loading) return <Loader />;
-  if (error) return <p className="text-red-500 text-center mt-10">{error}</p>;
+  if (error && !tool) return <p className="text-red-500 text-center mt-10">{error}</p>;
   if (!tool) return <p className="text-center mt-10">Tool not found.</p>;
 
-  const canRequest = user && user._id !== tool.owner._id && requestCount < 3;
+  // Determine if the booking button should be shown and enabled
+  const isOwner = user && user._id === tool.owner?._id;
+  const canRequest = !isOwner && requestCount < 3;
   const isButtonDisabled = !startDate || !endDate || !canRequest;
 
   return (
@@ -121,41 +121,46 @@ const ToolDetailPage = () => {
           </div>
           <div className="mb-4">
             <span className="font-semibold">Owner: </span>
-            <span>{tool.owner.name} (Trust Score: {tool.owner.trustScore}/5)</span>
+            {/* Use optional chaining for safety */}
+            <span>{tool.owner?.name || 'Unknown Owner'} (Trust Score: {tool.owner?.trustScore || 'N/A'}/5)</span>
           </div>
           
           {error && <p className="text-red-500 mb-4">{error}</p>}
           {bookingMessage && <p className="text-green-500 mb-4">{bookingMessage}</p>}
           
-          {canRequest && (
-              <div className="mb-4">
-                <label className="block text-gray-700">Booking Dates and Time</label>
-                <div className="flex gap-4">
-                    <input 
+          {user && !isOwner && (
+            <>
+              {canRequest && (
+                <div className="mb-4">
+                  <label className="block text-gray-700">Booking Dates</label>
+                  <div className="flex gap-4">
+                      <input 
                         type="datetime-local"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
                         required
                         className="w-1/2 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input 
+                      />
+                      <input 
                         type="datetime-local"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                         required
                         className="w-1/2 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                      />
+                  </div>
                 </div>
-            </div>
-          )}
+              )}
 
-          <button
-              onClick={handleBookingRequest}
-              disabled={isButtonDisabled}
-              className={`w-full text-white py-2 rounded-lg transition-colors ${isButtonDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'}`}
-            >
-              Request to Borrow
-            </button>
+              <button
+                onClick={handleBookingRequest}
+                disabled={isButtonDisabled}
+                className={`w-full text-white py-2 rounded-lg transition-colors ${isButtonDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'}`}
+              >
+                {canRequest ? 'Request to Borrow' : 'Cannot Request'}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

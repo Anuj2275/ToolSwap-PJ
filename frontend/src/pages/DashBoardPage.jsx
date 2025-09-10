@@ -28,32 +28,26 @@ const DashboardPage = () => {
     fetchBookings();
   }, [user]);
 
-// This useEffect listens for ALL real-time updates from the socket
-useEffect(() => {
-  if (socket) {
-    // Listener for when a NEW request comes in for one of your tools
-    const handleNewRequest = (newBooking) => {
-      // Add the new booking to the top of the list
-      setBookings(prevBookings => [newBooking.bookingDetails, ...prevBookings]);
-    };
+  useEffect(() => {
+    if (socket) {
+      const handleNewRequest = (newBooking) => {
+        setBookings(prevBookings => [newBooking.bookingDetails, ...prevBookings]);
+      };
+      const handleStatusUpdate = (updatedBooking) => {
+        setBookings(prevBookings => 
+          prevBookings.map(b => b._id === updatedBooking.bookingDetails._id ? updatedBooking.bookingDetails : b)
+        );
+      };
 
-    // Listener for when a request you made gets approved/declined
-    const handleStatusUpdate = (updatedBooking) => {
-      setBookings(prevBookings => 
-        prevBookings.map(b => b._id === updatedBooking.bookingDetails._id ? updatedBooking.bookingDetails : b)
-      );
-    };
+      socket.on('new_booking_request', handleNewRequest);
+      socket.on('booking_status_updated', handleStatusUpdate);
 
-    socket.on('new_booking_request', handleNewRequest);
-    socket.on('booking_status_updated', handleStatusUpdate);
-
-    // Clean up the listeners
-    return () => {
-      socket.off('new_booking_request', handleNewRequest);
-      socket.off('booking_status_updated', handleStatusUpdate);
-    };
-  }
-}, [socket]);
+      return () => {
+        socket.off('new_booking_request', handleNewRequest);
+        socket.off('booking_status_updated', handleStatusUpdate);
+      };
+    }
+  }, [socket]);
   
   const handleStatusUpdate = async (bookingId, newStatus) => {
     try {
@@ -64,57 +58,12 @@ useEffect(() => {
     }
   };
 
-  const handleReview = async (bookingId, rating, comment) => {
-    try {
-      await api.post('/users/reviews', { bookingId, rating, comment });
-      alert('Review submitted successfully!');
-    } catch (error) {
-      alert(error.response?.data?.message || 'Failed to submit review');
-    }
-  };
-
-
   if (loading || !user) {
     return <Loader />;
   }
   
-  const bookingsAsOwner = bookings.filter(b => b.owner._id === user._id);
-  const bookingsAsBorrower = bookings.filter(b => b.borrower._id === user._id);
-
-  const formatDateTime = (dateString) => {
-    const options = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  };
-  const ReviewForm = ({ booking }) => {
-    const [rating, setRating] = useState(5);
-    const [comment, setComment] = useState('');
-
-    return (
-      <div className="mt-2 p-4 border rounded-md">
-        <h4 className="font-semibold mb-2">Leave a Review</h4>
-        <div className="flex items-center mb-2">
-          <label className="mr-2">Rating:</label>
-          <select value={rating} onChange={(e) => setRating(e.target.value)} className="p-1 border rounded">
-            {[1, 2, 3, 4, 5].map(num => (
-              <option key={num} value={num}>{num}</option>
-            ))}
-          </select>
-        </div>
-        <textarea
-          className="w-full p-2 border rounded-md"
-          placeholder="Add a comment (optional)..."
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-        />
-        <button 
-          onClick={() => handleReview(booking._id, rating, comment)}
-          className="mt-2 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-        >
-          Submit Review
-        </button>
-      </div>
-    );
-  };
+  const bookingsAsOwner = bookings.filter(b => b.owner?._id === user._id);
+  const bookingsAsBorrower = bookings.filter(b => b.borrower?._id === user._id);
 
   return (
     <div className="max-w-6xl mx-auto mt-10">
@@ -128,11 +77,9 @@ useEffect(() => {
             {bookingsAsOwner.map(booking => (
               <li key={booking._id} className="border-b py-3 flex justify-between items-center">
                 <div>
-                  <p><span className="font-semibold">{booking.borrower.name}</span> wants to borrow <span className="font-semibold">{booking.tool.name}</span></p>
+                  {/* --- THIS IS THE FIX --- */}
+                  <p><span className="font-semibold">{booking.borrower?.name || 'Deleted User'}</span> wants to borrow <span className="font-semibold">{booking.tool?.name || 'Deleted Tool'}</span></p>
                   <p className="text-sm text-gray-500">Status: {booking.status}</p>
-                  <p className="text-xs text-gray-400">
-                    From: {formatDateTime(booking.startDate)} to {formatDateTime(booking.endDate)}
-                  </p>
                 </div>
                 {booking.status === 'pending' && (
                   <div>
@@ -140,7 +87,6 @@ useEffect(() => {
                     <button onClick={() => handleStatusUpdate(booking._id, 'declined')} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Decline</button>
                   </div>
                 )}
-                 {booking.status === 'completed' && <ReviewForm booking={booking} />}
               </li>
             ))}
           </ul>
@@ -154,12 +100,9 @@ useEffect(() => {
            <ul>
             {bookingsAsBorrower.map(booking => (
               <li key={booking._id} className="border-b py-3">
-                <p>You requested to borrow <span className="font-semibold">{booking.tool.name}</span> from <span className="font-semibold">{booking.owner.name}</span></p>
+                {/* --- THIS IS THE FIX --- */}
+                <p>You requested to borrow <span className="font-semibold">{booking.tool?.name || 'Deleted Tool'}</span> from <span className="font-semibold">{booking.owner?.name || 'Deleted User'}</span></p>
                 <p className="text-sm text-gray-500">Status: {booking.status}</p>
-                 <p className="text-xs text-gray-400">
-                    From: {formatDateTime(booking.startDate)} to {formatDateTime(booking.endDate)}
-                  </p>
-                  {booking.status === 'completed' && <ReviewForm booking={booking} />}
               </li>
             ))}
           </ul>

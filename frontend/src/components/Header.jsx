@@ -34,17 +34,25 @@ const Header = () => {
     <header className="bg-white shadow-md">
       <nav className="container mx-auto px-4 py-4 flex justify-between items-center">
         <Link to="/" className="text-2xl font-bold text-blue-600">ToolSwap</Link>
-        <div className="flex items-center"> {/* Use flexbox for alignment */}
+        <div className="flex items-center">
           {user ? (
             <>
-              {/* THIS IS THE NEW PART */}
               <span className="text-gray-800 font-semibold mr-4">
                 Welcome, {user.name}!
               </span>
 
               <Link to="/dashboard" className="mr-4 text-gray-700 hover:text-blue-600">Dashboard</Link>
               <Link to="/add-tool" className="mr-4 text-gray-700 hover:text-blue-600">List a Tool</Link>
-              <button onClick={handleLogout} className="text-gray-700 hover:text-blue-600">Logout</button>
+              <button onClick={handleLogout} className="mr-4 text-gray-700 hover:text-blue-600">Logout</button>
+              
+              {/* --- THIS IS THE MISSING PART --- */}
+              <Link to="/profile" title="My Profile">
+                <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+              </Link>
+              {/* --- END OF MISSING PART --- */}
+
             </>
           ) : (
             <>

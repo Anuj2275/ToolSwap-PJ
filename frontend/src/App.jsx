@@ -7,6 +7,9 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import AddToolPage from './pages/AddToolPage';
 import ToolDetailPage from './pages/ToolDetailPage';
+import ProfilePage from './pages/ProfilePage';
+import EditToolPage from './pages/EditToolPage';
+
 
 function App() {
   return (
@@ -19,6 +22,8 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/tool/:id/edit" element={<EditToolPage />} />
           <Route path="/add-tool" element={<AddToolPage />} />
           <Route path="/tool/:id" element={<ToolDetailPage />} />
 
