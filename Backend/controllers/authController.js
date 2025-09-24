@@ -6,7 +6,7 @@ const generateToken = (id) => {
     expiresIn: '30d',
   });
 };
-export const registerUser = async (req, res) => {
+export const registerUser = async (req, res, next) => {
   const { name, email, password } = req.body;
   try {
     const userExists = await User.findOne({ email });
@@ -21,15 +21,15 @@ export const registerUser = async (req, res) => {
       token: generateToken(user._id),
     });
   } catch (error) {
-      next(error); 
+      next(error);
   }
 };
 
 
-export const loginUser = async (req, res) => {
+export const loginUser = async (req, res, next) => {
     const { email, password } = req.body;
     try {
-      
+
         const user = await User.findOne({ email }).select('+password');
 
         if (user && (await user.matchPassword(password))) {
@@ -43,7 +43,7 @@ export const loginUser = async (req, res) => {
             res.status(401).json({ message: 'Invalid email or password' });
         }
     } catch (error) {
-        next(error); 
+        next(error);
     }
 };
 

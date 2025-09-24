@@ -1,6 +1,5 @@
 import User from '../models/userModel.js';
 import Review from '../models/reviewModel.js';
-import { activeUsers } from '../index.js';
 export const getUserProfile = async (req, res, next) => {
     try {
         const user = await User.findById(req.user._id).select('-password');
@@ -73,16 +72,4 @@ export const createReview = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-};
-
-
-export const getOnlineUsers = (req, res) => {
-  const onlineUsers = Object.keys(activeUsers).map(id => {
-    const user = activeUsers[id];
-    return {
-      _id: id,
-      name: user.name,
-    };
-  });
-  res.json(onlineUsers);
 };

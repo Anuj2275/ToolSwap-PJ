@@ -14,6 +14,18 @@ const RegisterPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Add client-side validation
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+    const emailRegex = /.+\@.+\..+/;
+    if (!emailRegex.test(email)) {
+        setError('Please enter a valid email address.');
+        return;
+    }
+
     try {
       const { data } = await api.post('/auth/register', { name, email, password });
       login(data);
@@ -28,7 +40,7 @@ const RegisterPage = () => {
       <h2 className="text-2xl font-bold mb-6 text-center">Create an Account</h2>
       {error && <p className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</p>}
       <form onSubmit={handleSubmit}>
-        {/* Form fields are styled with Tailwind CSS */}
+        {/* ... form fields ... */}
         <div className="mb-4">
           <label className="block text-gray-700">Name</label>
           <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />

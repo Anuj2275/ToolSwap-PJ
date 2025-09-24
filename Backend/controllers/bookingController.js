@@ -1,6 +1,5 @@
 import Booking from '../models/bookingModel.js';
 import Tool from '../models/toolModel.js';
-import { io, activeUsers } from '../index.js';
 
 
 export const createBookingRequest = async (req, res, next) => {
@@ -26,22 +25,6 @@ export const createBookingRequest = async (req, res, next) => {
       startDate,
       endDate,
     });
-
-    // --- THIS IS THE FIX ---
-    // Get the owner's full info object from activeUsers
-    const ownerInfo = activeUsers[tool.owner.toString()];
-    if (ownerInfo) {
-      // Use the .socketId property to send the notification
-      io.to(ownerInfo.socketId).emit('new_booking_request', {
-        message: `You have a new booking request for your tool: ${tool.name}`,
-        bookingDetails: booking,
-      });
-      console.log(`Notification sent to owner ${tool.owner}`);
-    } else {
-      console.log(`Owner ${tool.owner} is not online.`);
-    }
-    // --- END OF FIX ---
-
     res.status(201).json(booking);
   } catch (error) {
     next(error); 
@@ -91,22 +74,6 @@ export const updateBookingStatus = async (req, res, next) => {
             await tool.save();
         }
     }
-
-    // --- THIS IS THE FIX ---
-    // Get the borrower's full info object
-    const borrowerInfo = activeUsers[booking.borrower.toString()];
-    if (borrowerInfo) {
-      // Use the .socketId property to send the notification
-      io.to(borrowerInfo.socketId).emit('booking_status_updated', {
-        message: `Your request for "${booking.tool.name}" has been ${status}.`,
-        bookingDetails: booking,
-      });
-      console.log(`Notification sent to borrower ${booking.borrower}`);
-    } else {
-      console.log(`Borrower ${booking.borrower} is not online.`);
-    }
-    // --- END OF FIX ---
-
     res.json(booking);
   } catch (error) {
     next(error);

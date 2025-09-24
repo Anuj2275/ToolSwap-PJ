@@ -4,7 +4,6 @@ import ToolCard from '../components/ToolCard';
 
 const HomePage = () => {
   const [tools, setTools] = useState([]);
-  const [onlineUsers, setOnlineUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -17,9 +16,6 @@ const HomePage = () => {
 
         const toolsResponse = await api.get(`/tools/nearby?lat=${lat}&lng=${lng}&dist=${dist}`);
         setTools(toolsResponse.data);
-        
-        const usersResponse = await api.get('/users/online');
-        setOnlineUsers(usersResponse.data.map(user => user._id));
 
       } catch (err) {
         setError('Could not fetch data.',err.message);
@@ -29,9 +25,6 @@ const HomePage = () => {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 30000);
-
-    return () => clearInterval(interval);
   }, []);
 
   if (loading) return <p>Loading tools...</p>;
@@ -42,7 +35,7 @@ const HomePage = () => {
       <h1 className="text-3xl font-bold mb-6">Tools Near You</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {tools.length > 0 ? (
-          tools.map(tool => <ToolCard key={tool._id} tool={tool} onlineUsers={onlineUsers} />)
+          tools.map(tool => <ToolCard key={tool._id} tool={tool} />)
         ) : (
           <p>No tools found nearby.</p>
         )}
