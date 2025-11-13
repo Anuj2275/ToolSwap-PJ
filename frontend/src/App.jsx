@@ -1,3 +1,5 @@
+// in frontend/src/App.jsx
+
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
@@ -13,7 +15,8 @@ import EditToolPage from './pages/EditToolPage';
 
 function App() {
   return (
-    <div className="bg-gray-100 min-h-screen">
+    // FIX: Apply base text color and dark mode background/text color here.
+    <div className="modern-background min-h-screen dark:bg-gray-900 dark:text-gray-200 text-gray-900 transition-colors duration-500"> 
       <Header />
       <main className="container mx-auto p-4">
 
